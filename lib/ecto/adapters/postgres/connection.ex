@@ -403,6 +403,13 @@ if Code.ensure_loaded?(Postgrex.Connection) do
       "ALTER TABLE #{quote_name(table.name)} #{column_changes(changes)}"
     end
 
+    def execute_ddl({:create, %Index{primary_key: true}=index}) do
+      assemble(["ALTER TABLE",
+                quote_name(index.table),
+                "ADD PRIMARY KEY",
+                "(#{Enum.map_join(index.columns, ", ", &index_expr/1)})"])
+    end
+
     def execute_ddl({:create, %Index{}=index}) do
       assemble(["CREATE#{if index.unique, do: " UNIQUE"} INDEX",
                 quote_name(index.name), "ON", quote_name(index.table),

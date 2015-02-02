@@ -205,6 +205,15 @@ defmodule Ecto.Schema do
           {name, type, opts} ->
             Ecto.Schema.field(name, type, opts)
             name
+          keys when is_list(keys) ->
+            valid = Enum.all? keys, fn
+              ({_name, _type, _opts}) -> true
+              _ -> false
+            end
+            case valid do
+              true -> keys |> Enum.map &elem(&1, 0)
+              false -> raise ArgumentError, "@primary_key must be false or {name, type, opts}"
+            end
           other ->
             raise ArgumentError, "@primary_key must be false or {name, type, opts}"
         end
@@ -641,8 +650,12 @@ defmodule Ecto.Schema do
 
   @doc false
   def __read_after_writes__(primary_key, fields) do
-    if primary_key do
-      fields = [primary_key|List.delete(fields, primary_key)]
+    fields = case primary_key do
+      false -> fields
+      keys when is_list(keys) -> keys ++ Enum.reduce keys, fields, fn(key, acc) ->
+          List.delete(fields, key)
+        end
+      key -> [key|List.delete(fields, key)]
     end
 
     quote do

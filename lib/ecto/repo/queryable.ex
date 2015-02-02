@@ -181,8 +181,14 @@ defmodule Ecto.Repo.Queryable do
   defp query_for_get(queryable, id) do
     query = Queryable.to_query(queryable)
     model = assert_model!(query)
-    primary_key = primary_key_field!(model)
-    Ecto.Query.from(x in query, where: field(x, ^primary_key) == ^id)
+    # TODO (PH): handle noncompound id
+    case primary_key_field!(model) do
+      keys when is_list(keys) ->
+        Enum.reduce Enum.zip(keys, id), query, fn({key, value}, q) ->
+          Ecto.Query.from(x in q, where: field(x, ^key) == ^value)
+        end
+      key -> Ecto.Query.from(x in query, where: field(x, ^key) == ^id)
+    end
   end
 
   defp assert_model!(query) do

@@ -469,6 +469,7 @@ defmodule Ecto.Changeset do
           from m in query, where: field(m, ^field) == ^value
         end
 
+      # TODO(PH) : handle multiple pks
       if pk_value = Ecto.Model.primary_key(model) do
         pk_field = struct.__schema__(:primary_key)
         query = from m in query,

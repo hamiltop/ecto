@@ -69,8 +69,8 @@ defmodule Ecto.Migration do
     @moduledoc """
     Defines an index struct used in migrations.
     """
-    defstruct table: nil, name: nil, columns: [], unique: false
-    @type t :: %__MODULE__{table: atom, name: atom, columns: [atom | String.t], unique: boolean}
+    defstruct table: nil, name: nil, columns: [], unique: false, primary_key: false
+    @type t :: %__MODULE__{table: atom, name: atom, columns: [atom | String.t], unique: boolean, primary_key: boolean}
   end
 
   defmodule Table do
@@ -208,6 +208,8 @@ defmodule Ecto.Migration do
   string representing an expression that is sent as is to the database.
 
   Indexes are non-unique by default.
+
+  Indexes are not primary keys by default.
 
   ## Examples
 

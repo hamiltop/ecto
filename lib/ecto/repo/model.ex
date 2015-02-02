@@ -119,12 +119,22 @@ defmodule Ecto.Repo.Model do
 
   defp merge_into_changeset(model, struct, fields, changeset) do
     changes  = Map.take(struct, fields)
-    pk_field = model.__schema__(:primary_key)
 
     # If we have a primary key field but it is nil,
     # we should not include it in the list of changes.
-    if pk_field && !Ecto.Model.primary_key(struct) do
-      changes = Map.delete(changes, pk_field)
+    changes = case model.__schema__(:primary_key) do
+      false -> changes
+      fields when is_list(fields) ->
+        kv_pairs = Enum.zip fields, Ecto.Model.primary_key(struct)
+        Enum.reduce kv_pairs, changes, fn
+          ({field, nil}, acc) -> Map.delete(acc, field)
+          (_, acc) -> acc
+        end
+      field ->
+        case Ecto.Model.primary_key(struct) do
+          nil -> Map.delete(changes, field)
+          _ -> changes
+        end
     end
 
     update_in changeset.changes, &Map.merge(changes, &1)
@@ -135,10 +145,12 @@ defmodule Ecto.Repo.Model do
   end
 
   defp pk_filter(model, struct) do
-    pk_field = model.__schema__(:primary_key)
     pk_value = Ecto.Model.primary_key(struct) ||
                  raise Ecto.MissingPrimaryKeyError, struct: struct
-    [{pk_field, pk_value}]
+    case model.__schema__(:primary_key) do
+      fields when is_list(fields) -> fields |> Enum.zip pk_value
+      field -> [{field, pk_value}]
+    end
   end
 
   defp with_transactions_if_callbacks(repo, adapter, model, opts, callbacks, fun) do

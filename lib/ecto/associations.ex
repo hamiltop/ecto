@@ -204,10 +204,13 @@ defmodule Ecto.Associations.Has do
         ref = opts[:references] ->
           ref
         primary_key = Module.get_attribute(module, :primary_key) ->
-          elem(primary_key, 0)
+          case primary_key do
+            keys = [_h | _t] -> Enum.map(keys,&elem(&1, 0))
+            _ -> elem(primary_key, 0)
+          end
         true ->
           raise ArgumentError, "need to set :references option for " <>
-            "association #{inspect name} when model has no primary key"
+            "association #{inspect name} when model has no primary key(s)"
       end
 
     unless Module.get_attribute(module, :ecto_fields)[ref] do
