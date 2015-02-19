@@ -437,14 +437,23 @@ if Code.ensure_loaded?(Postgrex.Connection) do
       "ALTER TABLE #{quote_name(table.name)} #{column_changes(changes)}"
     end
 
+    def execute_ddl({:create, %Index{type: :primary_key}=index}) do
+      assemble(["ALTER TABLE", quote_name(index.table), "ADD PRIMARY KEY",
+        "(#{Enum.map_join(index.columns, ", ", &index_expr/1)})"])
+    end
+
     def execute_ddl({:create, %Index{}=index}) do
-      create = "CREATE#{if index.unique, do: " UNIQUE"} INDEX"
+      create = "CREATE#{if index.type == :unique, do: " UNIQUE"} INDEX"
       if index.concurrently, do: create = create <> " CONCURRENTLY"
 
       using = if index.using do "USING #{index.using}" end
 
       assemble([create, quote_name(index.name), "ON", quote_name(index.table),
                 using, "(#{Enum.map_join(index.columns, ", ", &index_expr/1)})"])
+    end
+
+    def execute_ddl({:drop, %Index{type: :primary_key}}) do
+      raise "don't know how to drop a primary key"
     end
 
     def execute_ddl({:drop, %Index{}=index}) do

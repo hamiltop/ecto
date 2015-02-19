@@ -466,10 +466,28 @@ defmodule Ecto.Adapters.PostgresTest do
            ~s|CREATE INDEX "posts$main" ON "posts" (lower(permalink))|
   end
 
-  test "create unique index" do
+  test "create unique index LEGACY" do
     create = {:create, index(:posts, [:permalink], unique: true)}
     assert SQL.execute_ddl(create) ==
            ~s|CREATE UNIQUE INDEX "posts_permalink_index" ON "posts" ("permalink")|
+  end
+
+  test "create unique index" do
+    create = {:create, index(:posts, [:permalink], type: :unique)}
+    assert SQL.execute_ddl(create) ==
+           ~s|CREATE UNIQUE INDEX "posts_permalink_index" ON "posts" ("permalink")|
+  end
+
+  test "create single primary key" do
+    create = {:create, index(:posts, [:permalink], type: :primary_key)}
+    assert SQL.execute_ddl(create) ==
+           ~s|ALTER TABLE "posts" ADD PRIMARY KEY ("permalink")|
+  end
+
+  test "create composite primary key" do
+    create = {:create, index(:posts, [:id, :permalink], type: :primary_key)}
+    assert SQL.execute_ddl(create) ==
+           ~s|ALTER TABLE "posts" ADD PRIMARY KEY ("id", "permalink")|
   end
 
   test "create index concurrently" do

@@ -98,7 +98,7 @@ defmodule Ecto.Migration do
     defstruct table: nil,
               name: nil,
               columns: [],
-              unique: false,
+              type: nil,
               concurrently: false,
               using: nil
 
@@ -106,7 +106,7 @@ defmodule Ecto.Migration do
       table: atom,
       name: atom,
       columns: [atom | String.t],
-      unique: boolean,
+      type: atom,
       concurrently: boolean,
       using: atom | String.t
     }
@@ -298,7 +298,8 @@ defmodule Ecto.Migration do
 
   """
   def index(table, columns, opts \\ []) when is_atom(table) and is_list(columns) do
-    index = struct(%Index{table: table, columns: columns}, opts)
+    type = opts[:type] || (opts[:unique] && :unique)
+    index = struct(%Index{table: table, columns: columns, type: type}, opts)
     %{index | name: index.name || default_index_name(index)}
   end
 
